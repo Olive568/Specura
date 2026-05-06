@@ -1,34 +1,33 @@
 package com.example.specuraprototype
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import coil.load
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MenuActivity : AppCompatActivity() {
 
-    private val requestReadImagesPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) loadRecentSpecuraImages()
-        }
+    private lateinit var db: AppDatabase
+    private val gson = Gson()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_menu)
 
-        // Requires your root layout to have android:id="@+id/main"
+        db = AppDatabase.getDatabase(this)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -50,84 +49,78 @@ class MenuActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        ensureGalleryPermissionThenLoad()
+        loadRecentPhotosFromDatabase()
     }
 
     override fun onResume() {
         super.onResume()
-        // refresh when coming back from Camera after taking a photo
-        ensureGalleryPermissionThenLoad()
+        loadRecentPhotosFromDatabase()
     }
 
-    private fun ensureGalleryPermissionThenLoad() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
+    private fun loadRecentPhotosFromDatabase() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            // 1. Fetch all scans from Room off the Main Thread
+            val allScans = try {
+                db.scanDao().getAllScans()
+            } catch (e: Exception) {
+                emptyList()
+            }
+            val latestScans = allScans.take(6)
 
-        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-            loadRecentSpecuraImages()
-        } else {
-            requestReadImagesPermission.launch(permission)
-        }
-    }
+            withContext(Dispatchers.Main) {
+                val slots = listOf(
+                    findViewById<ImageView>(R.id.imgRecent1),
+                    findViewById<ImageView>(R.id.imgRecent2),
+                    findViewById<ImageView>(R.id.imgRecent3),
+                    findViewById<ImageView>(R.id.imgRecent4),
+                    findViewById<ImageView>(R.id.imgRecent5),
+                    findViewById<ImageView>(R.id.imgRecent6),
+                )
 
-    private fun loadRecentSpecuraImages() {
-        val uris = queryLatestSpecuraImages(limit = 6)
+                // Clear all slots first
+                for (img in slots) {
+                    img.setImageDrawable(null)
+                    img.setOnClickListener(null)
+                }
 
-        val slots = listOf(
-            findViewById<ImageView>(R.id.imgRecent1),
-            findViewById<ImageView>(R.id.imgRecent2),
-            findViewById<ImageView>(R.id.imgRecent3),
-            findViewById<ImageView>(R.id.imgRecent4),
-            findViewById<ImageView>(R.id.imgRecent5),
-            findViewById<ImageView>(R.id.imgRecent6),
-        )
+                // 2. Fill with images using Coil for better memory management
+                for (i in latestScans.indices) {
+                    val scan = latestScans[i]
+                    val type = object : TypeToken<Map<String, Any>>() {}.type
+                    
+                    try {
+                        val data: Map<String, Any> = gson.fromJson(scan.jsonData, type)
+                        val imageUriStr = data["imageUri"] as? String
 
-        // Clear all slots first
-        for (img in slots) img.setImageDrawable(null)
-
-        // Fill with latest images
-        for (i in uris.indices) {
-            slots[i].setImageURI(uris[i])
-        }
-    }
-
-    private fun queryLatestSpecuraImages(limit: Int): List<Uri> {
-        val results = mutableListOf<Uri>()
-
-        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.RELATIVE_PATH,
-            MediaStore.Images.Media.DATE_ADDED
-        )
-
-        // Must match EXACT folder used in CameraActivity:
-        // put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Specura")
-        // MediaStore stores it with trailing slash:
-        val selection = "${MediaStore.Images.Media.RELATIVE_PATH}=?"
-        val selectionArgs = arrayOf("Pictures/Specura/")
-
-        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
-
-        contentResolver.query(
-            collection,
-            projection,
-            selection,
-            selectionArgs,
-            sortOrder
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-
-            while (cursor.moveToNext() && results.size < limit) {
-                val id = cursor.getLong(idCol)
-                val uri = Uri.withAppendedPath(collection, id.toString())
-                results.add(uri)
+                        if (imageUriStr != null) {
+                            // Using Coil (.load) instead of .setImageURI for safer memory management
+                            slots[i].load(imageUriStr) {
+                                crossfade(true)
+                                placeholder(android.R.drawable.ic_menu_gallery)
+                                error(android.R.drawable.ic_menu_report_image)
+                            }
+                            
+                            slots[i].setOnClickListener {
+                                val intent = Intent(this@MenuActivity, ResultActivity::class.java).apply {
+                                    putExtra("imageUri", imageUriStr)
+                                    putExtra("locationTag", scan.location)
+                                    putExtra("material", data["material"] as? String)
+                                    putExtra("damage", data["damage"] as? String)
+                                    putExtra("confidence", (data["confidence"] as? Double)?.toFloat() ?: 0f)
+                                    putExtra("prompt", data["prompt"] as? String ?: "")
+                                    putExtra("damageSignal", (data["E"] as? Double)?.toFloat() ?: 0f)
+                                    putExtra("severityScore", (data["H"] as? Double)?.toFloat() ?: 0f)
+                                    putExtra("severityLabel", data["severity"] as? String)
+                                }
+                                startActivity(intent)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Safety net for missing or corrupt data
+                        slots[i].setImageResource(android.R.drawable.ic_menu_report_image)
+                    }
+                }
             }
         }
-
-        return results
     }
 }

@@ -3,6 +3,7 @@ package com.example.specuraprototype
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -16,10 +17,15 @@ import com.google.gson.reflect.TypeToken
 
 class HistoryActivity : AppCompatActivity() {
 
+    private lateinit var db: AppDatabase
+    private val gson = Gson()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_history)
+
+        db = AppDatabase.getDatabase(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -27,76 +33,104 @@ class HistoryActivity : AppCompatActivity() {
             insets
         }
 
-        // Back -> Menu (not just finish)
+        // Back -> Menu
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
-            startActivity(Intent(this, MenuActivity::class.java))
             finish()
         }
 
         // Bottom nav
         findViewById<ImageButton>(R.id.btnNavHistory).setOnClickListener {
-            // already here (no-op)
+            // Already here
         }
 
         findViewById<ImageButton>(R.id.btnNavCamera).setOnClickListener {
             startActivity(Intent(this, CameraActivity::class.java))
+            finish()
         }
 
         findViewById<ImageButton>(R.id.btnNavSettings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        loadHistoryIntoUI()
+        loadHistoryFromDatabase()
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh history when returning to this screen
-        loadHistoryIntoUI()
+        loadHistoryFromDatabase()
     }
 
-    private fun loadHistoryIntoUI() {
+    private fun loadHistoryFromDatabase() {
         val container = findViewById<LinearLayout>(R.id.historyContainer)
         container.removeAllViews()
 
-        val prefs = getSharedPreferences("specura_history", MODE_PRIVATE)
-        val json = prefs.getString("items", null)
+        // Fetch all scans from Room database
+        val scans = db.scanDao().getAllScans()
 
-        if (json.isNullOrBlank()) {
+        if (scans.isEmpty()) {
             val empty = TextView(this).apply {
                 text = "No history yet. Take a photo first."
-                textSize = 14f
+                textSize = 16f
+                setPadding(0, 24, 0, 0)
+                gravity = android.view.Gravity.CENTER
             }
             container.addView(empty)
             return
         }
 
-        val type = object : TypeToken<List<HistoryItem>>() {}.type
-        val list: List<HistoryItem> = Gson().fromJson(json, type)
+        for (scan in scans) {
+            // Parse JSON data stored in Room
+            val type = object : TypeToken<Map<String, Any>>() {}.type
+            val data: Map<String, Any> = gson.fromJson(scan.jsonData, type)
 
-        for (item in list) {
             val entry = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(0, 0, 0, 24)
+                setPadding(16, 16, 16, 32)
+                background = getDrawable(android.R.drawable.dialog_holo_light_frame)
             }
 
-            val image = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    420
-                )
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setImageURI(Uri.parse(item.imageUri))
+            // Image
+            val imageUri = data["imageUri"] as? String
+            if (imageUri != null) {
+                val image = ImageView(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        600
+                    )
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    setImageURI(Uri.parse(imageUri))
+                    setPadding(0, 0, 0, 8)
+                }
+                entry.addView(image)
             }
 
-            val text = TextView(this).apply {
-                text = item.detectedMaterial
+            val locationText = TextView(this).apply {
+                text = "Location: ${scan.location}"
+                textSize = 18f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+
+            val materialText = TextView(this).apply {
+                text = "Material: ${data["material"] ?: "Unknown"}"
+                textSize = 16f
+            }
+
+            val damageText = TextView(this).apply {
+                text = "Damage: ${data["damage"] ?: "Unknown"} (${data["severity"] ?: ""})"
                 textSize = 14f
-                setPadding(0, 10, 0, 0)
             }
 
-            entry.addView(image)
-            entry.addView(text)
+            val dateText = TextView(this).apply {
+                val sdf = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault())
+                text = sdf.format(java.util.Date(scan.timestamp))
+                textSize = 12f
+                setTextColor(android.graphics.Color.GRAY)
+            }
+
+            entry.addView(locationText)
+            entry.addView(materialText)
+            entry.addView(damageText)
+            entry.addView(dateText)
             container.addView(entry)
         }
     }

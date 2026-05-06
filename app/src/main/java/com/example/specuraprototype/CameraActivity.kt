@@ -4,10 +4,14 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,29 +23,38 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import java.text.SimpleDateFormat
-import java.util.Locale
-import android.app.Dialog
-import android.view.Window
-import android.view.WindowManager
-import android.widget.Button
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class CameraActivity : AppCompatActivity() {
 
     private var imageCapture: ImageCapture? = null
+    private lateinit var classifier: ClipClassifier
+    private lateinit var db: AppDatabase
+    private lateinit var etLocationTag: EditText
+    private val gson = Gson()
 
+    // 1. Improved Permission Handling
     private val requestCameraPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) startCamera()
-            else Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
+            if (granted) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "Camera permission is required to perform scans.", Toast.LENGTH_LONG).show()
+                finish() // Exit activity if permission denied
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
+
+        classifier = ClipClassifier(this)
+        db = AppDatabase.getDatabase(this)
+        
+        etLocationTag = findViewById(R.id.etLocationTag)
 
         val backButton = findViewById<ImageButton>(R.id.btnBack)
         backButton.setOnClickListener {
@@ -52,68 +65,127 @@ class CameraActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        findViewById<ImageButton>(R.id.btnNavHistory).setOnClickListener {
+            startActivity(Intent(this, HistoryActivity::class.java))
+        }
+
         findViewById<ImageButton>(R.id.btnNavCamera).setOnClickListener {
-            takePhoto()
-        }
-
-        // Ask permission if needed, then start preview
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            startCamera()
-        } else {
-            requestCameraPermission.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-
-
-
-    private fun takePhoto() {
-        val capture = imageCapture ?: return
-
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
-            .format(System.currentTimeMillis())
-        val fileName = "SPECURA_$timeStamp"
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-
-            // ✅ Your requested folder: Pictures/Specura/
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Specura")
+            val input = etLocationTag.text.toString()
+            if (LocationHelper.isValid(input)) {
+                takePhoto()
+            } else {
+                Toast.makeText(this, "Please enter a location tag first", Toast.LENGTH_SHORT).show()
+                etLocationTag.requestFocus()
             }
         }
 
+        // Initial permission check
+        checkPermissions()
+    }
 
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(
-            contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        ).build()
+    private fun checkPermissions() {
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
+                startCamera()
+            }
+            else -> {
+                requestCameraPermission.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
 
-        capture.takePicture(
+    private fun takePhoto() {
+        val imageCapture = imageCapture ?: return
+
+        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
+            .format(System.currentTimeMillis())
+        
+        // Using MediaStore avoids FileUriExposedException because it returns a content:// URI
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SpecuraPrototype")
+            }
+        }
+
+        val outputOptions = ImageCapture.OutputFileOptions
+            .Builder(
+                contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+            .build()
+
+        imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraActivity", "Photo capture failed: ${exc.message}", exc)
-                    Toast.makeText(this@CameraActivity, "Capture failed", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val uri = output.savedUri?.toString() ?: return
-
-                    saveToHistory(uri)
-                    showDetectionWindow()
-
-                    // Optional: go back to Menu so you can see it in Recent Photos
-
-
+                    val savedUri = output.savedUri ?: return
+                    processCapturedImage(savedUri)
                 }
             }
         )
+    }
+
+    private fun processCapturedImage(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream?.close()
+
+            if (bitmap != null) {
+                val rawInput = etLocationTag.text.toString()
+                val normalizedTag = LocationHelper.normalizeLocationTag(rawInput)
+
+                val result = classifier.classify(bitmap, normalizedTag)
+                
+                saveScanToDatabase(normalizedTag, result, uri.toString())
+
+                val intent = Intent(this, ResultActivity::class.java).apply {
+                    putExtra("imageUri", uri.toString())
+                    putExtra("locationTag", normalizedTag)
+                    putExtra("material", result.material)
+                    putExtra("damage", result.damage)
+                    putExtra("confidence", result.confidence)
+                    putExtra("prompt", result.prompt)
+                    putExtra("damageSignal", result.damageSignal)
+                    putExtra("severityScore", result.severityScore)
+                    putExtra("severityLabel", result.severityLabel)
+                }
+                startActivity(intent)
+            }
+        } catch (e: Exception) {
+            Log.e("CameraActivity", "Error processing image", e)
+        }
+    }
+
+    private fun saveScanToDatabase(location: String, result: ClassificationResult, imageUri: String) {
+        val dataMap = mapOf(
+            "material" to result.material,
+            "damage" to result.damage,
+            "confidence" to result.confidence,
+            "severity" to result.severityLabel,
+            "E" to result.damageSignal,
+            "H" to result.severityScore,
+            "imageUri" to imageUri
+        )
+
+        val jsonString = gson.toJson(dataMap)
+
+        val entity = ScanEntity(
+            location = location,
+            jsonData = jsonString,
+            timestamp = System.currentTimeMillis()
+        )
+        // Note: In a real app, this should also be moved off the main thread.
+        // But since you have allowMainThreadQueries() in AppDatabase, it works for now.
+        db.scanDao().insert(entity)
     }
 
     private fun startCamera() {
@@ -127,64 +199,28 @@ class CameraActivity : AppCompatActivity() {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+                )
+            } catch (exc: Exception) {
+                Log.e("CameraActivity", "Use case binding failed", exc)
+            }
         }, ContextCompat.getMainExecutor(this))
     }
-    private fun showDetectionWindow() {
-        val dialog = Dialog(this)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setContentView(R.layout.dialog_detection)
 
-        dialog.setCancelable(false)
-        dialog.setCanceledOnTouchOutside(false)
-
-        dialog.window?.setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
-        )
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        dialog.window?.setDimAmount(0.6f)
-
-        dialog.findViewById<Button>(R.id.btnClose).setOnClickListener {
-            dialog.dismiss()
-            // Camera remains active after closing
-        }
-
-        dialog.show()
+    override fun onDestroy() {
+        super.onDestroy()
+        classifier.close()
     }
-    private fun saveToHistory(imageUri: String) {
-        val prefs = getSharedPreferences("specura_history", MODE_PRIVATE)
-        val gson = Gson()
-
-        val existingJson = prefs.getString("items", null)
-        val type = object : TypeToken<MutableList<HistoryItem>>() {}.type
-
-        val historyList: MutableList<HistoryItem> =
-            if (existingJson != null) {
-                gson.fromJson(existingJson, type)
-            } else {
-                mutableListOf()
-            }
-
-        historyList.add(
-            0,
-            HistoryItem(
-                imageUri = imageUri,
-                detectedMaterial = "Material detected: Placeholder\nLorem ipsum dolor sit amet...",
-                timestamp = System.currentTimeMillis()
-            )
-        )
-
-        prefs.edit()
-            .putString("items", gson.toJson(historyList))
-            .apply()
-    }
-
-
 }

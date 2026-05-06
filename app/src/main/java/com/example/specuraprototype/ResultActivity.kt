@@ -1,25 +1,50 @@
 package com.example.specuraprototype
 
+import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageButton
-import androidx.activity.enableEdgeToEdge
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
 class ResultActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_result)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        val imageUri = intent.getStringExtra("imageUri")
+        val prompt = intent.getStringExtra("prompt")
+        val confidence = intent.getFloatExtra("confidence", 0.0f)
+        val damage = intent.getStringExtra("damage")
+        val severityLabel = intent.getStringExtra("severityLabel")
+        val severityScore = intent.getFloatExtra("severityScore", 0.0f)
+
+        val imageView = findViewById<ImageView>(R.id.resultImage)
+        val promptView = findViewById<TextView>(R.id.resultPrompt)
+        val confidenceView = findViewById<TextView>(R.id.resultConfidence)
+        val damageView = findViewById<TextView>(R.id.resultDamage)
+        val severityView = findViewById<TextView>(R.id.resultSeverity)
+        val closeButton = findViewById<Button>(R.id.btnClose)
+
+        if (imageUri != null) {
+            imageView.setImageURI(Uri.parse(imageUri))
         }
 
-        val backButton = findViewById<ImageButton>(R.id.btnBack)
-        backButton.setOnClickListener {
+        promptView.text = "→ $prompt"
+        confidenceView.text = "Confidence: ${String.format("%.4f", confidence)}"
+        
+        if (damage?.contains("Normal", ignoreCase = true) == true || 
+            damage?.contains("Clean", ignoreCase = true) == true ||
+            damage?.contains("Raw", ignoreCase = true) == true) {
+            damageView.text = "No strong damage detected"
+            severityView.text = ""
+        } else {
+            damageView.text = "Detected: $damage"
+            severityView.text = "Severity: $severityLabel (${String.format("%.4f", severityScore)})"
+        }
+
+        closeButton.setOnClickListener {
             finish()
         }
     }
