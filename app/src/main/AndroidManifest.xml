@@ -30,15 +30,15 @@
             android:exported="false" />
         <activity
             android:name=".ResultActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.SpecuraPrototype.Result" />
         <activity
             android:name=".CameraActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.SpecuraPrototype">
+            android:theme="@style/Theme.SpecuraPrototype.Start">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

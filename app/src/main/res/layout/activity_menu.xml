@@ -4,8 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
     <!-- Top Info Box -->
     <LinearLayout
@@ -23,14 +22,14 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Menu"
+            android:text="@string/menu_title"
             android:textSize="20sp"
             android:textStyle="bold"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Select an option or a recent photo"
+            android:text="@string/menu_subtitle"
             android:textSize="14sp"
             android:layout_marginTop="8dp"/>
     </LinearLayout>
@@ -40,7 +39,7 @@
         android:id="@+id/tvRecent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Recent Photos"
+        android:text="@string/recent_photos"
         android:textStyle="bold"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
@@ -70,7 +69,7 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 1" />
+            android:contentDescription="@string/recent_photo_1" />
 
         <ImageView
             android:id="@+id/imgRecent2"
@@ -81,7 +80,7 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 2" />
+            android:contentDescription="@string/recent_photo_2" />
 
         <ImageView
             android:id="@+id/imgRecent3"
@@ -92,7 +91,7 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 3" />
+            android:contentDescription="@string/recent_photo_3" />
 
         <ImageView
             android:id="@+id/imgRecent4"
@@ -103,7 +102,7 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 4" />
+            android:contentDescription="@string/recent_photo_4" />
 
         <ImageView
             android:id="@+id/imgRecent5"
@@ -114,7 +113,7 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 5" />
+            android:contentDescription="@string/recent_photo_5" />
 
         <ImageView
             android:id="@+id/imgRecent6"
@@ -125,14 +124,16 @@
             android:layout_margin="4dp"
             android:background="#D0D0D0"
             android:scaleType="centerCrop"
-            android:contentDescription="Recent photo 6" />
+            android:contentDescription="@string/recent_photo_6" />
     </GridLayout>
 
     <!-- Bottom Nav Bar (same as Camera) -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
-        android:layout_width="300dp"
+        android:layout_width="0dp"
         android:layout_height="80dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:background="#FFFFFF"
@@ -146,6 +147,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@android:color/transparent"
+            android:contentDescription="@string/nav_history"
             android:src="@android:drawable/ic_menu_recent_history"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -157,6 +159,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:background="@android:color/transparent"
+            android:contentDescription="@string/nav_camera"
             android:src="@android:drawable/ic_menu_camera"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -169,6 +172,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@android:color/transparent"
+            android:contentDescription="@string/nav_settings"
             android:src="@android:drawable/ic_menu_manage"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"

@@ -4,12 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.Switch
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -33,15 +33,11 @@ class SettingsActivity : AppCompatActivity() {
 
         // Bottom nav wiring
         findViewById<ImageButton>(R.id.btnNavHistory).setOnClickListener {
-            if (this !is HistoryActivity) {
-                startActivity(Intent(this, HistoryActivity::class.java))
-            }
+            startActivity(Intent(this, HistoryActivity::class.java))
         }
 
         findViewById<ImageButton>(R.id.btnNavCamera).setOnClickListener {
-            if (this !is CameraActivity) {
-                startActivity(Intent(this, CameraActivity::class.java))
-            }
+            startActivity(Intent(this, CameraActivity::class.java))
         }
 
         // If you're already in Settings, do nothing (or you can refresh)
@@ -50,19 +46,19 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // Switches (mock behavior for now)
-        findViewById<Switch>(R.id.swAutoSave).setOnCheckedChangeListener { _, isChecked ->
+        findViewById<SwitchMaterial>(R.id.swAutoSave).setOnCheckedChangeListener { _, isChecked ->
             Toast.makeText(this, "Auto-save: $isChecked", Toast.LENGTH_SHORT).show()
         }
 
-        findViewById<Switch>(R.id.swShutterSound).setOnCheckedChangeListener { _, isChecked ->
+        findViewById<SwitchMaterial>(R.id.swShutterSound).setOnCheckedChangeListener { _, isChecked ->
             Toast.makeText(this, "Shutter sound: $isChecked", Toast.LENGTH_SHORT).show()
         }
 
-        findViewById<Switch>(R.id.swSaveHistory).setOnCheckedChangeListener { _, isChecked ->
+        findViewById<SwitchMaterial>(R.id.swSaveHistory).setOnCheckedChangeListener { _, isChecked ->
             Toast.makeText(this, "Save to history: $isChecked", Toast.LENGTH_SHORT).show()
         }
 
-        findViewById<Switch>(R.id.swShowConfidence).setOnCheckedChangeListener { _, isChecked ->
+        findViewById<SwitchMaterial>(R.id.swShowConfidence).setOnCheckedChangeListener { _, isChecked ->
             Toast.makeText(this, "Show confidence: $isChecked", Toast.LENGTH_SHORT).show()
         }
 

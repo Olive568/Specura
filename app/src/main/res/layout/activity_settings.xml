@@ -4,13 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
     <ImageButton
         android:id="@+id/btnBack"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:contentDescription="@string/back"
         android:src="@drawable/ic_arrow_back"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -48,14 +48,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Settings"
+                    android:text="@string/settings_title"
                     android:textSize="20sp"
                     android:textStyle="bold"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manage app preferences"
+                    android:text="@string/settings_subtitle"
                     android:textSize="14sp"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
@@ -64,7 +64,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Capture"
+                android:text="@string/settings_capture"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="8dp"/>
@@ -84,11 +84,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Auto-save captured photos"
+                    android:text="@string/auto_save_captured_photos"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swAutoSave"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -110,11 +110,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Shutter sound"
+                    android:text="@string/shutter_sound"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swShutterSound"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -125,7 +125,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Results"
+                android:text="@string/settings_results"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="8dp"/>
@@ -145,11 +145,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Save results to history"
+                    android:text="@string/save_results_to_history"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swSaveHistory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -171,11 +171,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Show confidence score"
+                    android:text="@string/show_confidence_score"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swShowConfidence"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -186,7 +186,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="App"
+                android:text="@string/settings_app"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="8dp"/>
@@ -196,7 +196,7 @@
                 android:id="@+id/btnAbout"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="About SPECURA"
+                android:text="@string/about_specura"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/btn_oval"
@@ -208,7 +208,7 @@
                 android:id="@+id/btnHelp"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="Help / How to Use"
+                android:text="@string/help_how_to_use"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/btn_oval"
@@ -220,7 +220,7 @@
                 android:id="@+id/btnClearHistory"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="Clear History (Mock)"
+                android:text="@string/clear_history_mock"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/btn_oval"
@@ -231,7 +231,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Version: Prototype v0.1"
+                android:text="@string/version_prototype"
                 android:textSize="12sp"
                 android:textColor="#777777"
                 android:layout_marginTop="12dp"
@@ -243,8 +243,10 @@
     <!-- Bottom Nav Bar (same as your camera/menu) -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
-        android:layout_width="300dp"
+        android:layout_width="0dp"
         android:layout_height="80dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:background="#FFFFFF"
@@ -257,7 +259,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@android:color/transparent"
-            android:contentDescription="History"
+            android:contentDescription="@string/nav_history"
             android:src="@android:drawable/ic_menu_recent_history"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -268,7 +270,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:background="@android:color/transparent"
-            android:contentDescription="Camera"
+            android:contentDescription="@string/nav_camera"
             android:src="@android:drawable/ic_menu_camera"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -280,7 +282,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@android:color/transparent"
-            android:contentDescription="Settings"
+            android:contentDescription="@string/nav_settings"
             android:src="@android:drawable/ic_menu_manage"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"

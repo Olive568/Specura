@@ -1,5 +1,5 @@
 package com.example.specuraprototype
-
+import kotlinx.coroutines.launch
 import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
@@ -15,6 +15,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -23,8 +24,10 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -127,8 +130,13 @@ class CameraActivity : AppCompatActivity() {
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = output.savedUri ?: return
-                    processCapturedImage(savedUri)
+
+                    // Use lifecycleScope to run the heavy AI stuff in the background
+                    lifecycleScope.launch(Dispatchers.Default) {
+                        processCapturedImage(savedUri)
+                    }
                 }
+
             }
         )
     }
@@ -143,22 +151,27 @@ class CameraActivity : AppCompatActivity() {
                 val rawInput = etLocationTag.text.toString()
                 val normalizedTag = LocationHelper.normalizeLocationTag(rawInput)
 
+                // 1. RUN AI IN BACKGROUND (This is safe here because of Dispatchers.Default)
                 val result = classifier.classify(bitmap, normalizedTag)
-                
+
+                // 2. SAVE TO DB IN BACKGROUND
                 saveScanToDatabase(normalizedTag, result, uri.toString())
 
-                val intent = Intent(this, ResultActivity::class.java).apply {
-                    putExtra("imageUri", uri.toString())
-                    putExtra("locationTag", normalizedTag)
-                    putExtra("material", result.material)
-                    putExtra("damage", result.damage)
-                    putExtra("confidence", result.confidence)
-                    putExtra("prompt", result.prompt)
-                    putExtra("damageSignal", result.damageSignal)
-                    putExtra("severityScore", result.severityScore)
-                    putExtra("severityLabel", result.severityLabel)
+                // 3. SWITCH TO MAIN THREAD ONLY FOR THE INTENT
+                runOnUiThread {
+                    val intent = Intent(this@CameraActivity, ResultActivity::class.java).apply {
+                        putExtra("imageUri", uri.toString())
+                        putExtra("locationTag", normalizedTag)
+                        putExtra("material", result.material)
+                        putExtra("damage", result.damage)
+                        putExtra("confidence", result.confidence)
+                        putExtra("prompt", result.prompt)
+                        putExtra("damageSignal", result.damageSignal)
+                        putExtra("severityScore", result.severityScore)
+                        putExtra("severityLabel", result.severityLabel)
+                    }
+                    startActivity(intent)
                 }
-                startActivity(intent)
             }
         } catch (e: Exception) {
             Log.e("CameraActivity", "Error processing image", e)

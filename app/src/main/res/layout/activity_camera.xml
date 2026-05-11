@@ -4,8 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
     <!-- Top header with back button and Location Tag input -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -20,6 +19,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
             android:src="@drawable/ic_arrow_back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -31,7 +31,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:hint="Enter Location Tag (e.g. Wall A)"
+            android:hint="@string/location_tag_hint"
+            android:importantForAutofill="no"
             android:inputType="textCapCharacters"
             android:singleLine="true"
             android:textSize="14sp"
@@ -56,8 +57,10 @@
     <!-- Bottom Nav Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
-        android:layout_width="300dp"
+        android:layout_width="0dp"
         android:layout_height="80dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
         android:background="#FFFFFF"
@@ -70,7 +73,7 @@
             android:id="@+id/btnNavHistory"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:contentDescription="History"
+            android:contentDescription="@string/nav_history"
             android:background="@android:color/transparent"
             android:src="@android:drawable/ic_menu_recent_history"
             app:layout_constraintStart_toStartOf="parent"
@@ -82,7 +85,7 @@
             android:id="@+id/btnNavCamera"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:contentDescription="Camera"
+            android:contentDescription="@string/nav_camera"
             android:background="@android:color/transparent"
             android:src="@android:drawable/ic_menu_camera"
             app:layout_constraintStart_toStartOf="parent"
@@ -95,7 +98,7 @@
             android:id="@+id/btnNavSettings"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:contentDescription="Settings"
+            android:contentDescription="@string/nav_settings"
             android:background="@android:color/transparent"
             android:src="@android:drawable/ic_menu_manage"
             app:layout_constraintEnd_toEndOf="parent"

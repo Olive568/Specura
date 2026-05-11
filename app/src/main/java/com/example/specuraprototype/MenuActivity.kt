@@ -59,12 +59,9 @@ class MenuActivity : AppCompatActivity() {
 
     private fun loadRecentPhotosFromDatabase() {
         lifecycleScope.launch(Dispatchers.IO) {
-            // 1. Fetch all scans from Room off the Main Thread
-            val allScans = try {
-                db.scanDao().getAllScans()
-            } catch (e: Exception) {
-                emptyList()
-            }
+            val db = AppDatabase.getDatabase(this@MenuActivity)
+            val allScans = db.scanDao().getAllScans() // Get data on Background Thread
+
             val latestScans = allScans.take(6)
 
             withContext(Dispatchers.Main) {
@@ -99,18 +96,11 @@ class MenuActivity : AppCompatActivity() {
                                 placeholder(android.R.drawable.ic_menu_gallery)
                                 error(android.R.drawable.ic_menu_report_image)
                             }
-                            
+                             
                             slots[i].setOnClickListener {
-                                val intent = Intent(this@MenuActivity, ResultActivity::class.java).apply {
-                                    putExtra("imageUri", imageUriStr)
-                                    putExtra("locationTag", scan.location)
-                                    putExtra("material", data["material"] as? String)
-                                    putExtra("damage", data["damage"] as? String)
-                                    putExtra("confidence", (data["confidence"] as? Double)?.toFloat() ?: 0f)
-                                    putExtra("prompt", data["prompt"] as? String ?: "")
-                                    putExtra("damageSignal", (data["E"] as? Double)?.toFloat() ?: 0f)
-                                    putExtra("severityScore", (data["H"] as? Double)?.toFloat() ?: 0f)
-                                    putExtra("severityLabel", data["severity"] as? String)
+                                val intent = Intent(this@MenuActivity, HistoryActivity::class.java).apply {
+                                    putExtra(HistoryActivity.EXTRA_FOCUS_LOCATION, scan.location)
+                                    putExtra(HistoryActivity.EXTRA_FOCUS_SCAN_ID, scan.id)
                                 }
                                 startActivity(intent)
                             }

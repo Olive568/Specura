@@ -5,13 +5,13 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
     tools:context=".ResultActivity">
 
     <ImageView
         android:id="@+id/resultImage"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:contentDescription="@string/result_image"
         android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -20,66 +20,90 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:background="#99000000"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/infoContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="320dp"
+        android:layout_height="420dp"
+        android:background="@drawable/result_popup_background"
         android:orientation="vertical"
-        android:padding="24dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:padding="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/resultPrompt"
-            android:layout_width="wrap_content"
+            android:id="@+id/resultTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="→ prompt text"
-            android:textColor="#FFFFFF"
+            android:text="@string/detection_result"
+            android:textColor="#111111"
             android:textSize="18sp"
-            android:fontFamily="monospace" />
+            android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/resultConfidence"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Confidence: 0.0000"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:fontFamily="monospace"
-            android:layout_marginTop="4dp"/>
+        <ScrollView
+            android:id="@+id/resultScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="12dp"
+            android:layout_weight="1">
 
-        <TextView
-            android:id="@+id/resultDamage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No strong damage detected"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:fontFamily="monospace"
-            android:layout_marginTop="24dp"/>
+            <LinearLayout
+                android:id="@+id/resultContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/resultSeverity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Severity: label (0.0000)"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:fontFamily="monospace"
-            android:layout_marginTop="4dp"/>
+                <TextView
+                    android:id="@+id/resultPrompt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/result_prompt_placeholder"
+                    android:textColor="#111111"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/resultConfidence"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/result_confidence_placeholder"
+                    android:textColor="#111111"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/resultDamage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/result_damage_placeholder"
+                    android:textColor="#111111"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/resultSeverity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/result_severity_placeholder"
+                    android:textColor="#111111"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </ScrollView>
 
         <Button
             android:id="@+id/btnClose"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="CLOSE"
-            android:layout_gravity="end"
             android:layout_marginTop="16dp"
             android:backgroundTint="#444444"
-            android:textColor="#FFFFFF"/>
+            android:text="@string/close"
+            android:textColor="#FFFFFF" />
 
     </LinearLayout>
 

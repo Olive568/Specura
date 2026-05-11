@@ -2,4 +2,12 @@
 <resources>
 
     <style name="Theme.SpecuraPrototype" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <style name="Theme.SpecuraPrototype.Start" parent="Theme.SpecuraPrototype">
+        <item name="android:windowBackground">#D9D9D6</item>
+    </style>
+
+    <style name="Theme.SpecuraPrototype.Result" parent="Theme.SpecuraPrototype">
+        <item name="android:windowBackground">#000000</item>
+    </style>
 </resources>

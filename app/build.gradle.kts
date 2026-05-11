@@ -38,13 +38,21 @@ android {
     buildFeatures {
         compose = true
     }
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = false
+        }
+    }
 }
 
 dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.opencv:opencv:4.9.0")
-    
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
