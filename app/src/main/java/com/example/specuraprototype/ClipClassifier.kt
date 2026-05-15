@@ -101,9 +101,9 @@ class ClipClassifier(private val context: Context) {
         return file.absolutePath
     }
 
-    fun classify(bitmap: Bitmap, location: String = "Default"): ClassificationResult {
+    fun classify(bitmap: Bitmap, location: String = "Default", selectedMaterial: String = "Auto"): ClassificationResult {
         try {
-            // 1. Pre-processing: Proper Center Cropping to avoid "squashing" textures
+            // 1. Pre-processing
             val size = minOf(bitmap.width, bitmap.height)
             val xOffset = (bitmap.width - size) / 2
             val yOffset = (bitmap.height - size) / 2
@@ -116,11 +116,9 @@ class ClipClassifier(private val context: Context) {
             val byteBuffer = ByteBuffer.allocateDirect(1 * 3 * 224 * 224 * 4).order(ByteOrder.nativeOrder())
             val floatBuffer = byteBuffer.asFloatBuffer()
 
-            // OpenAI CLIP Standard Normalization
             val mean = floatArrayOf(0.48145466f, 0.4578275f, 0.40821073f)
             val std = floatArrayOf(0.26862954f, 0.26130258f, 0.27577711f)
 
-            // Extract channels in CHW format (Planar: R block, then G block, then B block)
             for (p in pixels) floatBuffer.put(((Color.red(p) / 255f) - mean[0]) / std[0])
             for (p in pixels) floatBuffer.put(((Color.green(p) / 255f) - mean[1]) / std[1])
             for (p in pixels) floatBuffer.put(((Color.blue(p) / 255f) - mean[2]) / std[2])
@@ -134,11 +132,20 @@ class ClipClassifier(private val context: Context) {
             val outputData = flattenOutput((results.get(outputName).get() as OnnxTensor).getValue())
             normalize(outputData)
 
+            // Determine which indices to consider
+            val targetIndices = when (selectedMaterial) {
+                "Concrete" -> listOf(0, 1)
+                "Wood" -> listOf(2, 3)
+                "Metal" -> listOf(4, 5)
+                "Brick" -> listOf(6, 7)
+                else -> prompts.indices.toList() // Auto Mode
+            }
+
             val similarities = FloatArray(textFeatures.size)
-            var bestIdx = 0
+            var bestIdx = -1
             var maxSimilarity = -999f
 
-            for (i in textFeatures.indices) {
+            for (i in targetIndices) {
                 val sim = cosineSimilarity(outputData, textFeatures[i]) * modelTemperature
                 similarities[i] = sim
                 if (sim > maxSimilarity) {
@@ -147,48 +154,58 @@ class ClipClassifier(private val context: Context) {
                 }
             }
 
-            val expScores = similarities.map { exp(it.toDouble()).toFloat() }
+            // Calculate probabilities only for target indices
+            val expScores = targetIndices.map { i -> exp(similarities[i].toDouble()).toFloat() }
             val sumExp = expScores.sum()
-            val probabilities = expScores.map { it / sumExp }
+            val probabilities = targetIndices.mapIndexed { index, i -> i to (expScores[index] / sumExp) }.toMap()
 
-            // --- MATERIAL TIE-BREAKER LOGIC ---
             var finalBestIdx = bestIdx
             val initialPrediction = prompts[bestIdx]
 
-            // OpenCV check for "Smooth Wood" vs "Rough Brick"
+            // --- MATERIAL TIE-BREAKER LOGIC (Only for Auto Mode) ---
             val textureDensity = analyzeDamageOpenCV(squareBitmap)
-
-            if (initialPrediction.contains("brick")) {
-                // If model thinks Brick but texture is smooth, force result to wood_intact
-                if (textureDensity < 0.15f) {
-                    finalBestIdx = 2 // Switch to wood_intact
-                    Log.d("SpecuraFix", "Correction: Brick -> Wood (Density: $textureDensity)")
-                }
-            } else if (initialPrediction.contains("metal")) {
-                // If model thinks Metal but confidence is low, check for Concrete
-                if (probabilities[bestIdx] < 0.50f && probabilities[0] > 0.10f) {
-                    finalBestIdx = 0 // Switch to concrete_intact
+            if (selectedMaterial == "Auto") {
+                if (initialPrediction.contains("brick")) {
+                    if (textureDensity < 0.15f) {
+                        finalBestIdx = 2 // Switch to wood_intact
+                        Log.d("SpecuraFix", "Correction: Brick -> Wood (Density: $textureDensity)")
+                    }
+                } else if (initialPrediction.contains("metal")) {
+                    val concreteProb = (exp(similarities[0].toDouble()) / prompts.indices.sumOf { exp(similarities[it].toDouble()) }).toFloat()
+                    val metalProb = (exp(similarities[bestIdx].toDouble()) / prompts.indices.sumOf { exp(similarities[it].toDouble()) }).toFloat()
+                    if (metalProb < 0.50f && concreteProb > 0.10f) {
+                        finalBestIdx = 0 // Switch to concrete_intact
+                    }
                 }
             }
 
             val prediction = prompts[finalBestIdx]
             val mapping = promptMapping[finalBestIdx] ?: Pair("Unknown", "Unknown")
-            val confidence = calibrateConfidence(
-                probabilities = probabilities,
-                selectedIdx = finalBestIdx,
-                bestIdx = bestIdx,
-                wasCorrected = finalBestIdx != bestIdx
-            )
+            
+            // Confidence calculation
+            val confidence = if (selectedMaterial == "Auto") {
+                val allExp = prompts.indices.map { exp(similarities[it].toDouble()).toFloat() }
+                val allSum = allExp.sum()
+                val allProbabilities = allExp.map { it / allSum }
+                calibrateConfidence(
+                    probabilities = allProbabilities,
+                    selectedIdx = finalBestIdx,
+                    bestIdx = bestIdx,
+                    wasCorrected = finalBestIdx != bestIdx
+                )
+            } else {
+                // In manual mode, confidence is the relative probability between intact/damaged
+                probabilities[finalBestIdx] ?: 0f
+            }
 
             // --- DAMAGE ANALYSIS ---
             var damageSignal = textureDensity
             if (prediction.contains("wood")) {
-                damageSignal *= 0.5f // Wood grain is naturally more "edgy" than concrete
+                damageSignal *= 0.5f 
             } else if (prediction.contains("rusted")) {
                 damageSignal = detectRustOpenCV(squareBitmap)
             }
 
-            // Cleanup
             results.close()
             inputTensor.close()
 
@@ -201,12 +218,13 @@ class ClipClassifier(private val context: Context) {
 
             updateHistory(location, finalScore)
 
-            val finalPrompt = if (confidence < LOW_CONFIDENCE_THRESHOLD) {
+            // Fallback only for Auto mode
+            val finalPrompt = if (selectedMaterial == "Auto" && confidence < LOW_CONFIDENCE_THRESHOLD) {
                 "Possible material detected, but confidence is low. Try better lighting or closer distance."
             } else prediction
 
             return ClassificationResult(
-                material = mapping.first,
+                material = if (selectedMaterial != "Auto") selectedMaterial else mapping.first,
                 damage = mapping.second,
                 confidence = confidence,
                 prompt = finalPrompt,
@@ -269,7 +287,6 @@ class ClipClassifier(private val context: Context) {
         Utils.bitmapToMat(bitmap, src)
         Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2GRAY)
         Imgproc.GaussianBlur(src, src, Size(5.0, 5.0), 0.0)
-        // High threshold to ignore wood grain but catch cracks/brick edges
         Imgproc.Canny(src, src, 120.0, 250.0)
         val score = Core.countNonZero(src).toFloat() / (src.rows() * src.cols())
         src.release()

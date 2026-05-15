@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.SpecuraPrototype" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.SpecuraPrototype" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color (Grays). -->
+        <item name="colorPrimary">@color/gray_700</item>
+        <item name="colorPrimaryVariant">@color/gray_900</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/gray_500</item>
+        <item name="colorSecondaryVariant">@color/gray_700</item>
+        <item name="colorOnSecondary">@android:color/black</item>
+
+        <!-- Background and Surface -->
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="colorOnBackground">#000000</item>
+
+        <!-- Error colors -->
+        <item name="colorError">#B00020</item>
+        <item name="colorOnError">#FFFFFF</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
 
     <style name="Theme.SpecuraPrototype.Start" parent="Theme.SpecuraPrototype">
         <item name="android:windowBackground">#D9D9D6</item>

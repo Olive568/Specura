@@ -22,6 +22,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:text="@string/menu_title"
             android:textSize="20sp"
             android:textStyle="bold"/>
@@ -29,10 +30,27 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:text="@string/menu_subtitle"
             android:textSize="14sp"
             android:layout_marginTop="8dp"/>
     </LinearLayout>
+
+    <!-- Help Button (Top Left) -->
+    <ImageButton
+        android:id="@+id/btnHelp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/help_how_to_use"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_menu_help"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:elevation="8dp"/>
 
     <!-- Recent Photos Label -->
     <TextView
@@ -127,7 +145,7 @@
             android:contentDescription="@string/recent_photo_6" />
     </GridLayout>
 
-    <!-- Bottom Nav Bar (same as Camera) -->
+    <!-- Bottom Nav Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"

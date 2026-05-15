@@ -2,11 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Top header with back button and Location Tag input -->
+    <!-- Top header with back button -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -25,23 +26,17 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <EditText
-            android:id="@+id/etLocationTag"
-            android:layout_width="0dp"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:hint="@string/location_tag_hint"
-            android:importantForAutofill="no"
-            android:inputType="textCapCharacters"
-            android:singleLine="true"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:text="Capture Scan"
+            android:textSize="18sp"
+            android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/btnBack"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="16dp"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 
     <!-- Main content area -->
     <androidx.camera.view.PreviewView
@@ -50,20 +45,142 @@
         android:layout_height="0dp"
         android:layout_margin="16dp"
         app:layout_constraintTop_toBottomOf="@id/topBar"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintBottom_toTopOf="@id/materialSelectorContainer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" >
 
-    <!-- Bottom Nav Bar -->
+        <ImageView
+            android:id="@+id/ghostOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.5"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:src="@android:drawable/ic_menu_report_image"
+            tools:visibility="visible" />
+    </androidx.camera.view.PreviewView>
+
+    <!-- Material Selection Mode -->
+    <LinearLayout
+        android:id="@+id/materialSelectorContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/locationContainer">
+
+        <TextView
+            android:id="@+id/tvManualModeHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/manual_mode_hint"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleMaterialGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:checkedButton="@+id/btnModeAuto">
+
+                <Button
+                    android:id="@+id/btnModeAuto"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mode_auto"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnModeBrick"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mode_brick"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnModeConcrete"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mode_concrete"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnModeMetal"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mode_metal"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnModeWood"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mode_wood"
+                    android:textSize="12sp" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- Location Selection UI (Anchored above capture button) -->
+    <LinearLayout
+        android:id="@+id/locationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilLocation"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/location_tag_hint">
+
+            <AutoCompleteTextView
+                android:id="@+id/actvLocationTag"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapCharacters"
+                android:singleLine="true"
+                android:dropDownHeight="200dp"
+                android:textColor="#000000"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+
+    <!-- Bottom Nav Bar (Contains Capture Button) -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="80dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginBottom="16dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:background="#FFFFFF"
+        android:background="@drawable/bottom_nav_background"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -80,7 +197,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <!-- Camera (Center) -->
+        <!-- Camera (Center Capture Button) -->
         <ImageButton
             android:id="@+id/btnNavCamera"
             android:layout_width="56dp"
@@ -106,5 +223,7 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Ghost Overlay (Last element to be drawn on top of everything) -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

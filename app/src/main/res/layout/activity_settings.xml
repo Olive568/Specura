@@ -17,7 +17,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"/>
 
-    <!-- Main content area (above bottom nav) -->
+    <!-- Main content area -->
     <ScrollView
         android:id="@+id/settingsScroll"
         android:layout_width="0dp"
@@ -69,32 +69,6 @@
                 android:textSize="14sp"
                 android:layout_marginBottom="8dp"/>
 
-            <!-- Setting: Auto-save captures -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:gravity="center_vertical"
-                android:background="#F2F2F2"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/auto_save_captured_photos"
-                    android:textSize="16sp"
-                    android:textStyle="bold"/>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swAutoSave"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
-            </LinearLayout>
-
             <!-- Setting: Shutter sound -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -129,32 +103,6 @@
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:layout_marginBottom="8dp"/>
-
-            <!-- Setting: Save to history -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:gravity="center_vertical"
-                android:background="#F2F2F2"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/save_results_to_history"
-                    android:textSize="16sp"
-                    android:textStyle="bold"/>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swSaveHistory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
-            </LinearLayout>
 
             <!-- Setting: Show confidence score -->
             <LinearLayout
@@ -203,30 +151,6 @@
                 android:backgroundTint="@null"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- Setting: Help -->
-            <Button
-                android:id="@+id/btnHelp"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="@string/help_how_to_use"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/btn_oval"
-                android:backgroundTint="@null"
-                android:layout_marginBottom="12dp"/>
-
-            <!-- Setting: Clear history -->
-            <Button
-                android:id="@+id/btnClearHistory"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="@string/clear_history_mock"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/btn_oval"
-                android:backgroundTint="@null"
-                android:layout_marginBottom="8dp"/>
-
             <!-- Footer version text -->
             <TextView
                 android:layout_width="wrap_content"
@@ -240,7 +164,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Nav Bar (same as your camera/menu) -->
+    <!-- Bottom Nav Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"

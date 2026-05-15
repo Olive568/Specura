@@ -28,10 +28,11 @@
     <LinearLayout
         android:id="@+id/infoContainer"
         android:layout_width="320dp"
-        android:layout_height="420dp"
+        android:layout_height="wrap_content"
+        android:minHeight="240dp"
         android:background="@drawable/result_popup_background"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -43,14 +44,14 @@
             android:layout_height="wrap_content"
             android:text="@string/detection_result"
             android:textColor="#111111"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
 
         <ScrollView
             android:id="@+id/resultScroll"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1">
 
             <LinearLayout
@@ -59,51 +60,87 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Material First -->
                 <TextView
-                    android:id="@+id/resultPrompt"
+                    android:id="@+id/resultMaterial"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/result_prompt_placeholder"
                     android:textColor="#111111"
-                    android:textSize="14sp" />
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="Material: Concrete" />
 
+                <!-- Condition Second -->
                 <TextView
-                    android:id="@+id/resultConfidence"
+                    android:id="@+id/resultCondition"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/result_confidence_placeholder"
                     android:textColor="#111111"
-                    android:textSize="14sp" />
+                    android:textSize="16sp"
+                    tools:text="Condition: Cracked" />
 
-                <TextView
-                    android:id="@+id/resultDamage"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/result_damage_placeholder"
-                    android:textColor="#111111"
-                    android:textSize="14sp" />
-
+                <!-- Severity (Hidden if Intact) -->
                 <TextView
                     android:id="@+id/resultSeverity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="#B00020"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Severity: Moderate" />
+
+                <!-- Confidence (Moved to bottom of info, smaller) -->
+                <TextView
+                    android:id="@+id/resultConfidence"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="@string/result_severity_placeholder"
-                    android:textColor="#111111"
-                    android:textSize="14sp" />
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    tools:text="Confidence: 0.9850" />
+
             </LinearLayout>
         </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp">
+
+            <Button
+                android:id="@+id/btnDelete"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:backgroundTint="#B00020"
+                android:text="@string/delete"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnKeep"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:backgroundTint="#4CAF50"
+                android:text="@string/keep"
+                android:textColor="#FFFFFF" />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnClose"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:backgroundTint="#444444"
             android:text="@string/close"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:visibility="gone" />
 
     </LinearLayout>
 

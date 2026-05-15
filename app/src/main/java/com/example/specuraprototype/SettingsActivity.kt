@@ -46,16 +46,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // Switches (mock behavior for now)
-        findViewById<SwitchMaterial>(R.id.swAutoSave).setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(this, "Auto-save: $isChecked", Toast.LENGTH_SHORT).show()
-        }
-
         findViewById<SwitchMaterial>(R.id.swShutterSound).setOnCheckedChangeListener { _, isChecked ->
             Toast.makeText(this, "Shutter sound: $isChecked", Toast.LENGTH_SHORT).show()
-        }
-
-        findViewById<SwitchMaterial>(R.id.swSaveHistory).setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(this, "Save to history: $isChecked", Toast.LENGTH_SHORT).show()
         }
 
         findViewById<SwitchMaterial>(R.id.swShowConfidence).setOnCheckedChangeListener { _, isChecked ->
@@ -65,14 +57,6 @@ class SettingsActivity : AppCompatActivity() {
         // Buttons (mock actions)
         findViewById<Button>(R.id.btnAbout).setOnClickListener {
             Toast.makeText(this, "About SPECURA (mock)", Toast.LENGTH_SHORT).show()
-        }
-
-        findViewById<Button>(R.id.btnHelp).setOnClickListener {
-            Toast.makeText(this, "Help / How to Use (mock)", Toast.LENGTH_SHORT).show()
-        }
-
-        findViewById<Button>(R.id.btnClearHistory).setOnClickListener {
-            Toast.makeText(this, "History cleared (mock)", Toast.LENGTH_SHORT).show()
         }
     }
 }

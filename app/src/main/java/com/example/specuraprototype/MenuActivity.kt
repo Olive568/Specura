@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -34,6 +35,11 @@ class MenuActivity : AppCompatActivity() {
             insets
         }
 
+        // Help button: Quick Tutorial
+        findViewById<ImageButton>(R.id.btnHelp).setOnClickListener {
+            showQuickTutorial()
+        }
+
         // Bottom nav: History
         findViewById<ImageButton>(R.id.btnNavHistory).setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
@@ -50,6 +56,17 @@ class MenuActivity : AppCompatActivity() {
         }
 
         loadRecentPhotosFromDatabase()
+    }
+
+    private fun showQuickTutorial() {
+        // Using androidx.appcompat.app.AlertDialog to avoid Material theme crash issues
+        AlertDialog.Builder(this)
+            .setTitle(R.string.tutorial_title)
+            .setMessage(R.string.tutorial_content)
+            .setPositiveButton(R.string.ok) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     override fun onResume() {
@@ -84,7 +101,7 @@ class MenuActivity : AppCompatActivity() {
                 for (i in latestScans.indices) {
                     val scan = latestScans[i]
                     val type = object : TypeToken<Map<String, Any>>() {}.type
-                    
+
                     try {
                         val data: Map<String, Any> = gson.fromJson(scan.jsonData, type)
                         val imageUriStr = data["imageUri"] as? String
@@ -96,7 +113,7 @@ class MenuActivity : AppCompatActivity() {
                                 placeholder(android.R.drawable.ic_menu_gallery)
                                 error(android.R.drawable.ic_menu_report_image)
                             }
-                             
+
                             slots[i].setOnClickListener {
                                 val intent = Intent(this@MenuActivity, HistoryActivity::class.java).apply {
                                     putExtra(HistoryActivity.EXTRA_FOCUS_LOCATION, scan.location)
