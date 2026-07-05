@@ -96,6 +96,8 @@ Adaptive Edge Detection & ROI Extraction)
    git clone [https://github.com/Olive568/Specura.git](https://github.com/Olive568/Specura.git)
 Launch your instance of Android Studio and load the newly cloned project repository root folder.
 
+Download the AI models and put them in an assets folder in the project https://drive.google.com/drive/folders/1VNpur401cUrDFKJdGchbDJyBEMwwtDg9?usp=sharing
+
 Allow the automated system dependencies to pull down via the initial Gradle sync procedure.
 
 Ensure the OpenCV Android SDK native references are correctly initialized via your system project build files.
