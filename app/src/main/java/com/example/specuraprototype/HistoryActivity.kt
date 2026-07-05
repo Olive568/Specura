@@ -1,6 +1,7 @@
 package com.example.specuraprototype
 
 import android.content.Intent
+import android.content.DialogInterface
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +11,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -43,12 +45,19 @@ class HistoryActivity : AppCompatActivity() {
     private var focusScanId = NO_FOCUS_SCAN_ID
     private var shouldScrollToFocus = false
 
-    private var pendingCsvData: String? = null
+    private var pendingCsvReport: String? = null
+    private var pendingPdfScans: List<ScanEntity> = emptyList()
 
-    private val createDocumentLauncher = registerForActivityResult(
+    private val createCsvDocumentLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
     ) { uri: Uri? ->
-        uri?.let { saveCsvToUri(it) }
+        uri?.let { saveCsvReportToUri(it) }
+    }
+
+    private val createPdfDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri: Uri? ->
+        uri?.let { savePdfReportToUri(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +94,7 @@ class HistoryActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnBatchExport).setOnClickListener {
-            exportSelectedFolders()
+            showGenerateReportDialog()
         }
 
         findViewById<Button>(R.id.btnBatchDelete).setOnClickListener {
@@ -244,7 +253,7 @@ class HistoryActivity : AppCompatActivity() {
             text = locationKey
             textSize = 17f
             setTextColor(android.graphics.Color.BLACK)
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
         }
 
         val summary = TextView(this).apply {
@@ -297,7 +306,7 @@ class HistoryActivity : AppCompatActivity() {
             text = getString(R.string.history_folder_overview_title)
             textSize = 17f
             setTextColor(android.graphics.Color.BLACK)
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
             setPadding(0, 0, 0, dp(8))
         }
         card.addView(title)
@@ -307,15 +316,16 @@ class HistoryActivity : AppCompatActivity() {
         val lastDate = formatTimestamp(sorted.last().timestamp)
 
         val timelineText = TextView(this).apply {
-            text = "${getString(R.string.history_first_capture, firstDate)}\n${getString(R.string.history_latest_capture, lastDate)}"
+            val dateRange = "${getString(R.string.history_first_capture, firstDate)}\n${getString(R.string.history_latest_capture, lastDate)}"
+            text = dateRange
             textSize = 13f
             setTextColor(android.graphics.Color.DKGRAY)
             setLineSpacing(0f, 1.2f)
         }
         card.addView(timelineText)
 
-        val overviewText = generateFolderOverview(scans)
-        if (overviewText != null) {
+        val overview = generateFolderTrendOverview(scans)
+        if (overview != null) {
             val divider = View(this).apply {
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
                     setMargins(0, dp(10), 0, dp(10))
@@ -325,38 +335,19 @@ class HistoryActivity : AppCompatActivity() {
             card.addView(divider)
 
             val overviewView = TextView(this).apply {
-                text = overviewText
+                text = overview.text
                 textSize = 14f
-                setTextColor(android.graphics.Color.parseColor("#B00020"))
-                setTypeface(null, android.graphics.Typeface.ITALIC)
+                setTextColor(
+                    when (overview.trendType) {
+                        ConditionTrendType.WORSENING -> android.graphics.Color.parseColor("#B00020")
+                        ConditionTrendType.STABLE -> android.graphics.Color.parseColor("#2E7D32")
+                        ConditionTrendType.NEW -> android.graphics.Color.parseColor("#546E7A")
+                    }
+                )
+                setTypeface(null, Typeface.ITALIC)
             }
             card.addView(overviewView)
         }
-
-        val btnGhostTrack = Button(this).apply {
-            text = "Track Progression (Ghost Mode)"
-            setBackgroundColor(android.graphics.Color.parseColor("#2196F3"))
-            setTextColor(android.graphics.Color.WHITE)
-            isAllCaps = false
-            setOnClickListener {
-                val latestScan = scans.sortedByDescending { it.timestamp }.first()
-                val data: Map<String, Any> = gson.fromJson(latestScan.jsonData, scanDataType)
-                val uri = data["imageUri"] as? String
-
-                val intent = Intent(this@HistoryActivity, CameraActivity::class.java).apply {
-                    putExtra(CameraActivity.EXTRA_LOCATION_TAG, latestScan.location)
-                    putExtra(CameraActivity.EXTRA_PREVIOUS_IMAGE_PATH, uri)
-                }
-                startActivity(intent)
-            }
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = dp(12)
-            }
-        }
-        card.addView(btnGhostTrack)
 
         return card
     }
@@ -367,6 +358,10 @@ class HistoryActivity : AppCompatActivity() {
         val damage = data["damage"] as? String ?: "Unknown"
         val severity = data["severity"] as? String ?: "Unknown"
         val imageUri = data["imageUri"] as? String
+        val isTechnicalLedger = hasTechnicalLedgerFields(data)
+        val clipVerified = extractBoolean(data["clip_verified"])
+        val defectSummary = formatVerifiedDefects(data["verified_defects"])
+        val roiCount = extractRoiCount(data["rois"])
 
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -409,13 +404,26 @@ class HistoryActivity : AppCompatActivity() {
             }
 
             val line1 = TextView(this@HistoryActivity).apply {
-                text = getString(R.string.history_damage_format, damage, severity)
+                text = if (isTechnicalLedger) {
+                    val summary = if (clipVerified) {
+                        if (defectSummary.isBlank()) "Verified defect" else defectSummary
+                    } else {
+                        "Normal surface"
+                    }
+                    "$material - $summary"
+                } else {
+                    getString(R.string.history_damage_format, damage, severity)
+                }
                 textSize = 14f
                 setTextColor(android.graphics.Color.BLACK)
             }
 
             val line2 = TextView(this@HistoryActivity).apply {
-                text = "${formatTimestamp(scan.timestamp)} | $material"
+                text = if (isTechnicalLedger) {
+                    "${formatTimestamp(scan.timestamp)} | ROIs: $roiCount"
+                } else {
+                    getString(R.string.history_entry_subtitle, formatTimestamp(scan.timestamp), material)
+                }
                 textSize = 12f
                 setTextColor(android.graphics.Color.GRAY)
             }
@@ -441,7 +449,8 @@ class HistoryActivity : AppCompatActivity() {
         imageUri: String?,
         data: Map<String, Any>
     ) {
-        val dialogView = LinearLayout(this).apply {
+        val isTechnicalLedger = hasTechnicalLedgerFields(data)
+        val dialogContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(20), dp(20), dp(20))
             setBackgroundColor(android.graphics.Color.parseColor("#F8F9FA"))
@@ -459,17 +468,17 @@ class HistoryActivity : AppCompatActivity() {
                     error(android.R.drawable.ic_menu_report_image)
                 }
             }
-            dialogView.addView(imageView)
+            dialogContent.addView(imageView)
         }
 
         val badge = TextView(this).apply {
-            text = severity.uppercase()
+            text = severity.uppercase(Locale.getDefault())
             setTextColor(android.graphics.Color.WHITE)
             setPadding(dp(12), dp(4), dp(12), dp(4))
             textSize = 13f
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
-            val color = when (severity.lowercase()) {
+            val color = when (severity.lowercase(Locale.getDefault())) {
                 "high" -> android.graphics.Color.parseColor("#D32F2F")
                 "medium" -> android.graphics.Color.parseColor("#FBC02D")
                 "low" -> android.graphics.Color.parseColor("#388E3C")
@@ -485,7 +494,7 @@ class HistoryActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { bottomMargin = dp(16) }
         }
-        dialogView.addView(badge)
+        dialogContent.addView(badge)
 
         fun addDetail(label: String, value: String, isTechnical: Boolean = false) {
             val row = LinearLayout(this).apply {
@@ -496,7 +505,7 @@ class HistoryActivity : AppCompatActivity() {
                 ).apply { bottomMargin = dp(6) }
             }
             val labelTv = TextView(this).apply {
-                text = "$label: "
+                text = getString(R.string.detail_label_format, label)
                 setTypeface(null, Typeface.BOLD)
                 setTextColor(android.graphics.Color.BLACK)
                 textSize = 14f
@@ -509,32 +518,112 @@ class HistoryActivity : AppCompatActivity() {
                 } else {
                     textSize = 14f
                 }
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    marginStart = dp(6)
+                }
                 setTextColor(android.graphics.Color.parseColor("#424242"))
+                setLineSpacing(0f, 1.1f)
             }
             row.addView(labelTv)
             row.addView(valueTv)
-            dialogView.addView(row)
+            dialogContent.addView(row)
         }
 
-        addDetail("Location Tag", scan.location)
+        val locationTag = data["actvLocationTag"] as? String ?: scan.location
+        val clipVerified = extractBoolean(data["clip_verified"])
+        val roiCount = extractRoiCount(data["rois"])
+        val verifiedDefectSummary = formatVerifiedDefects(data["verified_defects"])
+        val hScore = extractScore(data, "h_score", "H")
+        val eScore = extractScore(data, "e_score", "E")
+        val pixelCount = extractInt(data["pixel_count"])
+
+        addDetail("Location Tag", locationTag)
         addDetail("Material", material)
-        addDetail("Damage Type", damage)
-        addDetail("Detection Confidence", String.format("%.1f%%", (data["confidence"] as? Number)?.toDouble() ?: 0.0))
-        addDetail("Timestamp", formatTimestamp(scan.timestamp))
-        
-        val divider = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
-                setMargins(0, dp(10), 0, dp(10))
-            }
-            setBackgroundColor(android.graphics.Color.LTGRAY)
-        }
-        dialogView.addView(divider)
 
-        addDetail("H-Score (Severity)", String.format("%.4f", (data["H"] as? Number)?.toDouble() ?: 0.0), true)
-        addDetail("E-Score (Abnormality)", String.format("%.4f", (data["E"] as? Number)?.toDouble() ?: 0.0), true)
+        if (isTechnicalLedger) {
+            addDetail("Ledger Status", if (clipVerified) "DEFECT VERIFIED" else "NORMAL SURFACE")
+            if (verifiedDefectSummary.isNotBlank()) {
+                addDetail("Verified Defects", verifiedDefectSummary)
+            }
+            addDetail("ROI Count", roiCount.toString())
+            addDetail("Pixel Count", pixelCount.toString(), true)
+            addDetail("H-Score (Severity)", String.format(Locale.getDefault(), "%.4f", hScore), true)
+            addDetail("E-Score (Complexity)", String.format(Locale.getDefault(), "%.4f", eScore), true)
+        } else {
+            addDetail("Damage Type", damage)
+
+            addDetail("Timestamp", formatTimestamp(scan.timestamp))
+
+            val divider = View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
+                    setMargins(0, dp(10), 0, dp(10))
+                }
+                setBackgroundColor(android.graphics.Color.LTGRAY)
+            }
+            dialogContent.addView(divider)
+
+            addDetail("H-Score (Severity)", String.format(Locale.getDefault(), "%.4f", hScore), true)
+            addDetail("E-Score (Abnormality)", String.format(Locale.getDefault(), "%.4f", eScore), true)
+        }
+
+        if (isTechnicalLedger) {
+            addDetail("Timestamp", formatTimestamp(scan.timestamp))
+
+            val divider = View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
+                    setMargins(0, dp(10), 0, dp(10))
+                }
+                setBackgroundColor(android.graphics.Color.LTGRAY)
+            }
+            dialogContent.addView(divider)
+        }
+
+        if (!imageUri.isNullOrBlank()) {
+            val defectButton = Button(this).apply {
+                text = getString(R.string.view_defects)
+                setTextColor(android.graphics.Color.WHITE)
+                setBackgroundColor(android.graphics.Color.parseColor("#607D8B"))
+                isAllCaps = false
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(10) }
+                setOnClickListener {
+                    DefectOverlayDialogHelper.showDefectOverlayDialog(
+                        this@HistoryActivity,
+                        imageUri,
+                        parseVerifiedDefects(data["verified_defects"])
+                    )
+                }
+            }
+            dialogContent.addView(defectButton)
+        }
+
+        val scrollView = ScrollView(this).apply {
+            isFillViewport = true
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                (resources.displayMetrics.heightPixels * 0.72f).toInt()
+            )
+            dialogContent.layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            addView(
+                dialogContent,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
 
         MaterialAlertDialogBuilder(this)
-            .setView(dialogView)
+            .setView(scrollView)
             .setPositiveButton("Close") { d, _ -> d.dismiss() }
             .setNegativeButton("Delete") { _, _ -> confirmDeleteSingle(scan) }
             .setCancelable(true)
@@ -544,11 +633,12 @@ class HistoryActivity : AppCompatActivity() {
     private fun confirmDeleteSingle(scan: ScanEntity) {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_selected_title)
-            .setMessage("Are you sure you want to delete this scan entry? This action cannot be undone.")
-            .setPositiveButton(R.string.delete) { _, _ ->
+            .setMessage(R.string.delete_single_message)
+            .setPositiveButton(R.string.delete) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch(Dispatchers.IO) {
                     db.scanDao().deleteScan(scan)
                     withContext(Dispatchers.Main) {
+                        AppSettings.setLastActivity(this@HistoryActivity, "Deleted a file")
                         Toast.makeText(this@HistoryActivity, R.string.deleted_successfully, Toast.LENGTH_SHORT).show()
                         loadHistoryFromDatabase()
                     }
@@ -556,49 +646,6 @@ class HistoryActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
-    }
-
-    private fun generateFolderOverview(scans: List<ScanEntity>): String? {
-        if (scans.size < 2) return null
-        
-        val sortedScans = scans.sortedBy { it.timestamp }
-        val oldest = sortedScans.first()
-        val newest = sortedScans.last()
-
-        val oldestData: Map<String, Any> = gson.fromJson(oldest.jsonData, scanDataType)
-        val newestData: Map<String, Any> = gson.fromJson(newest.jsonData, scanDataType)
-
-        val oldestH = (oldestData["H"] as? Number)?.toDouble() ?: 0.0
-        val newestH = (newestData["H"] as? Number)?.toDouble() ?: 0.0
-        
-        val oldestE = (oldestData["E"] as? Number)?.toDouble() ?: 0.0
-        val newestE = (newestData["E"] as? Number)?.toDouble() ?: 0.0
-
-        val material = (newestData["material"] as? String) ?: ""
-        
-        val messages = mutableListOf<String>()
-
-        if (newestH > oldestH) {
-            val date1 = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(oldest.timestamp))
-            val date2 = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(newest.timestamp))
-            messages.add(getString(R.string.history_overview_damage_increase, date1, date2))
-            messages.add(getString(R.string.history_overview_cracks))
-        }
-
-        if (newestE > oldestE) {
-            val overviewStr = when {
-                material.contains("Concrete", ignoreCase = true) || material.contains("Brick", ignoreCase = true) -> 
-                    getString(R.string.history_overview_abnormalities_concrete)
-                material.contains("Metal", ignoreCase = true) || material.contains("Steel", ignoreCase = true) -> 
-                    getString(R.string.history_overview_abnormalities_metal)
-                material.contains("Wood", ignoreCase = true) -> 
-                    getString(R.string.history_overview_abnormalities_wood)
-                else -> null
-            }
-            if (overviewStr != null) messages.add(overviewStr)
-        }
-
-        return if (messages.isNotEmpty()) messages.joinToString("\n\n") else null
     }
 
     private fun toggleFolderSelection(locationKey: String) {
@@ -610,57 +657,100 @@ class HistoryActivity : AppCompatActivity() {
         loadHistoryFromDatabase()
     }
 
-    private fun exportSelectedFolders() {
+    private fun showGenerateReportDialog() {
         if (selectedFolders.isEmpty()) return
-        
-        lifecycleScope.launch(Dispatchers.IO) {
-            val allScans = db.scanDao().getAllScans()
-            val filteredScans = allScans.filter { 
-                selectedFolders.contains(LocationHelper.normalizeLocationTag(it.location)) 
-            }
 
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.report_options_title)
+            .setItems(
+                arrayOf(
+                    getString(R.string.csv_report),
+                    getString(R.string.pdf_report)
+                )
+            ) { _, which ->
+                when (which) {
+                    0 -> prepareCsvReport()
+                    1 -> preparePdfReport()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun prepareCsvReport() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val filteredScans = loadSelectedScans()
             if (filteredScans.isEmpty()) return@launch
 
-            val csvBuilder = StringBuilder()
-            csvBuilder.append("Location,Timestamp,Date,Material,Condition,SeverityLabel,SeverityScore(H),DamageSignal(E),ImageUri\n")
-            
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-
-            for (scan in filteredScans) {
-                val data: Map<String, Any> = gson.fromJson(scan.jsonData, scanDataType)
-                val dateStr = sdf.format(Date(scan.timestamp))
-                
-                csvBuilder.append("\"${scan.location}\",")
-                csvBuilder.append("${scan.timestamp},")
-                csvBuilder.append("\"$dateStr\",")
-                csvBuilder.append("\"${data["material"] ?: "Unknown"}\",")
-                csvBuilder.append("\"${data["damage"] ?: "Unknown"}\",")
-                csvBuilder.append("\"${data["severity"] ?: "Unknown"}\",")
-                csvBuilder.append("${data["H"] ?: 0.0},")
-                csvBuilder.append("${data["E"] ?: 0.0},")
-                csvBuilder.append("\"${data["imageUri"] ?: ""}\"\n")
-            }
-
+            val csvReport = InspectionReportHelper.buildCsvReport(filteredScans, gson, scanDataType)
             withContext(Dispatchers.Main) {
-                pendingCsvData = csvBuilder.toString()
-                val fileName = "Specura_Export_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())}.csv"
-                createDocumentLauncher.launch(fileName)
+                pendingCsvReport = csvReport
+                val fileName = "Specura_Report_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())}.csv"
+                createCsvDocumentLauncher.launch(fileName)
             }
         }
     }
 
-    private fun saveCsvToUri(uri: Uri) {
-        val csvData = pendingCsvData ?: return
+    private fun preparePdfReport() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val filteredScans = loadSelectedScans()
+            if (filteredScans.isEmpty()) return@launch
+
+            withContext(Dispatchers.Main) {
+                pendingPdfScans = filteredScans
+                val fileName = "Specura_Report_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())}.pdf"
+                createPdfDocumentLauncher.launch(fileName)
+            }
+        }
+    }
+
+    private fun saveCsvReportToUri(uri: Uri) {
+        val csvData = pendingCsvReport ?: return
         try {
             contentResolver.openOutputStream(uri)?.use { outputStream ->
                 outputStream.write(csvData.toByteArray())
-                Toast.makeText(this, "Export saved successfully", Toast.LENGTH_LONG).show()
+                AppSettings.setLastActivity(this, "CSV report generated")
+                Toast.makeText(this, R.string.report_saved_successfully, Toast.LENGTH_LONG).show()
                 clearSelection()
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to save export: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.report_generation_failed), Toast.LENGTH_LONG).show()
         }
-        pendingCsvData = null
+        pendingCsvReport = null
+    }
+
+    private fun savePdfReportToUri(uri: Uri) {
+        val scans = pendingPdfScans
+        if (scans.isEmpty()) return
+
+        try {
+            contentResolver.openOutputStream(uri)?.use { outputStream ->
+                val success = InspectionReportHelper.writePdfReport(
+                    context = this,
+                    outputStream = outputStream,
+                    scans = scans,
+                    gson = gson,
+                    scanDataType = scanDataType
+                )
+                if (success) {
+                    AppSettings.setLastActivity(this, "PDF report generated")
+                    Toast.makeText(this, R.string.report_saved_successfully, Toast.LENGTH_LONG).show()
+                    clearSelection()
+                } else {
+                    Toast.makeText(this, R.string.report_generation_failed, Toast.LENGTH_LONG).show()
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.report_generation_failed), Toast.LENGTH_LONG).show()
+        }
+        pendingPdfScans = emptyList()
+    }
+
+    private fun loadSelectedScans(): List<ScanEntity> {
+        val allScans = db.scanDao().getAllScans()
+        return allScans.filter {
+            selectedFolders.contains(LocationHelper.normalizeLocationTag(it.location))
+        }
     }
 
     private fun confirmDeleteSelected() {
@@ -684,6 +774,7 @@ class HistoryActivity : AppCompatActivity() {
             toDelete.forEach { db.scanDao().deleteScan(it) }
             
             withContext(Dispatchers.Main) {
+                AppSettings.setLastActivity(this@HistoryActivity, "Deleted files")
                 Toast.makeText(this@HistoryActivity, R.string.deleted_successfully, Toast.LENGTH_SHORT).show()
                 clearSelection()
             }
@@ -693,6 +784,244 @@ class HistoryActivity : AppCompatActivity() {
     private fun formatTimestamp(ts: Long): String {
         val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
         return sdf.format(Date(ts))
+    }
+
+    private fun hasTechnicalLedgerFields(data: Map<String, Any>): Boolean =
+        data.containsKey("clip_verified") || data.containsKey("rois") || data.containsKey("h_score")
+
+    private fun extractBoolean(value: Any?): Boolean = when (value) {
+        is Boolean -> value
+        is Number -> value.toInt() != 0
+        is String -> value.equals("true", ignoreCase = true)
+        else -> false
+    }
+
+    private fun extractScore(data: Map<String, Any>, primaryKey: String, fallbackKey: String): Double {
+        val primary = (data[primaryKey] as? Number)?.toDouble()
+        if (primary != null) return primary
+        return (data[fallbackKey] as? Number)?.toDouble() ?: 0.0
+    }
+
+    private fun extractInt(value: Any?): Int = when (value) {
+        is Number -> value.toInt()
+        is String -> value.toIntOrNull() ?: 0
+        else -> 0
+    }
+
+    private fun extractRoiCount(value: Any?): Int = when (value) {
+        is List<*> -> value.size
+        else -> 0
+    }
+
+    private fun formatVerifiedDefects(value: Any?): String {
+        val labels = when (value) {
+            is List<*> -> value.mapNotNull { item ->
+                when (item) {
+                    is Map<*, *> -> (item["label"] as? String)?.trim()?.takeIf { it.isNotBlank() }
+                    is String -> item.trim().takeIf { it.isNotBlank() }
+                    else -> null
+                }
+            }
+            is String -> value.split(',', '\n')
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+            else -> emptyList()
+        }
+
+        if (labels.isEmpty()) return ""
+
+        val counts = linkedMapOf<String, Int>()
+        val displayLabels = linkedMapOf<String, String>()
+        labels.forEach { label ->
+            val key = label.lowercase(Locale.getDefault())
+            counts[key] = (counts[key] ?: 0) + 1
+            if (!displayLabels.containsKey(key)) {
+                displayLabels[key] = label.replaceFirstChar { char ->
+                    if (char.isLowerCase()) char.titlecase(Locale.getDefault()) else char.toString()
+                }
+            }
+        }
+
+        return counts.entries.joinToString("\n") { entry ->
+            val label = displayLabels[entry.key].orEmpty()
+            if (entry.value > 1) "$label (${entry.value})" else label
+        }
+    }
+
+    private fun parseVerifiedDefects(value: Any?): List<VerifiedDefectRecord> {
+        return when (value) {
+            is List<*> -> value.mapNotNull { item ->
+                val defect = item as? Map<*, *> ?: return@mapNotNull null
+                val label = defect["label"] as? String ?: return@mapNotNull null
+                val roiMap = defect["roi"] as? Map<*, *>
+                val roi = RoiBounds(
+                    x = extractInt(roiMap?.get("x")),
+                    y = extractInt(roiMap?.get("y")),
+                    width = extractInt(roiMap?.get("width")),
+                    height = extractInt(roiMap?.get("height")),
+                    area = (roiMap?.get("area") as? Number)?.toDouble() ?: 0.0
+                )
+                VerifiedDefectRecord(label = label, roi = roi)
+            }
+            else -> emptyList()
+        }
+    }
+
+    private fun generateFolderTrendOverview(scans: List<ScanEntity>): ConditionTrendOverview? {
+        if (scans.isEmpty()) return null
+
+        val sortedScans = scans.sortedBy { it.timestamp }
+        val current = sortedScans.last()
+        val currentData: Map<String, Any> = gson.fromJson(current.jsonData, scanDataType)
+        val currentSeverity = extractScore(currentData, "h_score", "H")
+        val currentDefects = extractDefectLabels(currentData)
+
+        val previousSameLocation = sortedScans.dropLast(1)
+        val lastInspection = previousSameLocation.lastOrNull()
+        val lastInspectionDate = lastInspection?.let { formatDateOnly(it.timestamp) } ?: "N/A"
+        val daysSinceLastInspection = lastInspection?.let {
+            elapsedDays(current.timestamp, it.timestamp).toString()
+        } ?: "N/A"
+
+        val matchedPrevious = previousSameLocation
+            .asReversed()
+            .firstOrNull { previous ->
+                val previousData: Map<String, Any> = gson.fromJson(previous.jsonData, scanDataType)
+                val previousDefects = extractDefectLabels(previousData)
+                currentDefects.isNotEmpty() && previousDefects.intersect(currentDefects).isNotEmpty()
+            }
+
+        val trendType = when {
+            currentDefects.isEmpty() -> ConditionTrendType.STABLE
+            matchedPrevious == null -> ConditionTrendType.NEW
+            else -> {
+                val previousData: Map<String, Any> = gson.fromJson(matchedPrevious.jsonData, scanDataType)
+                val previousSeverity = extractScore(previousData, "h_score", "H")
+                val recurrenceCount = previousSameLocation.count { previous ->
+                    val previousMap: Map<String, Any> = gson.fromJson(previous.jsonData, scanDataType)
+                    val previousLabels = extractDefectLabels(previousMap)
+                    previousLabels.intersect(currentDefects).isNotEmpty()
+                } + 1
+
+                classifyConditionTrend(
+                    currentSeverity = currentSeverity,
+                    previousSeverity = previousSeverity,
+                    currentTimestamp = current.timestamp,
+                    previousTimestamp = matchedPrevious.timestamp,
+                    recurrenceCount = recurrenceCount
+                )
+            }
+        }
+
+        val summary = buildString {
+            append(getString(R.string.condition_trend_label))
+            append(": ")
+            append(getString(trendLabelRes(trendType)))
+            append('\n')
+            append(getString(R.string.last_inspection_date_label))
+            append(": ")
+            append(lastInspectionDate)
+            append('\n')
+            append(getString(R.string.days_since_last_inspection_label))
+            append(": ")
+            append(daysSinceLastInspection)
+        }
+
+        return ConditionTrendOverview(trendType = trendType, text = summary)
+    }
+
+    private fun extractDefectLabels(data: Map<String, Any>): Set<String> {
+        val labels = linkedSetOf<String>()
+
+        val verifiedDefects = data["verified_defects"]
+        if (verifiedDefects is List<*>) {
+            verifiedDefects.forEach { item ->
+                when (item) {
+                    is Map<*, *> -> {
+                        val label = (item["label"] as? String)?.trim().orEmpty()
+                        if (label.isNotBlank()) labels.add(normalizeDefectLabel(label))
+                    }
+                    is String -> {
+                        val label = item.trim()
+                        if (label.isNotBlank()) labels.add(normalizeDefectLabel(label))
+                    }
+                }
+            }
+        }
+
+        if (labels.isEmpty()) {
+            val damage = (data["damage"] as? String).orEmpty().trim()
+            if (damage.isNotBlank() && !damage.equals("Normal Surface", ignoreCase = true) && !damage.equals("Intact", ignoreCase = true)) {
+                damage.split(',', '/', '\n')
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .forEach { labels.add(normalizeDefectLabel(it)) }
+            }
+        }
+
+        return labels
+    }
+
+    private fun normalizeDefectLabel(value: String): String =
+        value.trim().lowercase(Locale.getDefault())
+
+    private fun classifyConditionTrend(
+        currentSeverity: Double,
+        previousSeverity: Double,
+        currentTimestamp: Long,
+        previousTimestamp: Long,
+        recurrenceCount: Int
+    ): ConditionTrendType {
+        val severityDelta = currentSeverity - previousSeverity
+        val daysElapsed = elapsedDays(currentTimestamp, previousTimestamp).toDouble()
+        val severityVelocity = severityDelta / daysElapsed
+        val timeWeight = minOf(daysElapsed / 365.0, 1.0)
+        val recurrenceWeight = recurrenceWeight(recurrenceCount)
+        val trendScore = (severityVelocity * 0.7) + (recurrenceWeight * 0.1) - (timeWeight * 0.2)
+
+        return when {
+            severityVelocity > 0.015 -> ConditionTrendType.WORSENING
+            severityDelta == 0.0 && daysElapsed > 90.0 -> ConditionTrendType.STABLE
+            trendScore > 0.02 -> ConditionTrendType.WORSENING
+            else -> ConditionTrendType.STABLE
+        }
+    }
+
+    private fun recurrenceWeight(recurrenceCount: Int): Double {
+        return when {
+            recurrenceCount >= 5 -> 1.0
+            recurrenceCount >= 3 -> 0.5
+            else -> 0.2
+        }
+    }
+
+    private fun elapsedDays(currentTimestamp: Long, previousTimestamp: Long): Long {
+        val delta = (currentTimestamp - previousTimestamp).coerceAtLeast(0L)
+        return (delta / 86400000L).coerceAtLeast(1L)
+    }
+
+    private fun formatDateOnly(timestamp: Long): String {
+        val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        return sdf.format(Date(timestamp))
+    }
+
+    private fun trendLabelRes(trendType: ConditionTrendType): Int {
+        return when (trendType) {
+            ConditionTrendType.NEW -> R.string.trend_new
+            ConditionTrendType.STABLE -> R.string.trend_stable
+            ConditionTrendType.WORSENING -> R.string.trend_worsening
+        }
+    }
+
+    private data class ConditionTrendOverview(
+        val trendType: ConditionTrendType,
+        val text: String
+    )
+
+    private enum class ConditionTrendType {
+        NEW,
+        STABLE,
+        WORSENING
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

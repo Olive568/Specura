@@ -65,44 +65,108 @@
                     android:id="@+id/resultMaterial"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:textColor="#111111"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     tools:text="Material: Concrete" />
 
-                <!-- Condition Second -->
                 <TextView
-                    android:id="@+id/resultCondition"
+                    android:id="@+id/resultMaterialConfidence"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#111111"
+                    android:textSize="14sp"
+                    tools:text="Confidence: 82.30%" />
+
+                <TextView
+                    android:id="@+id/resultTopMaterials"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textColor="#111111"
-                    android:textSize="16sp"
-                    tools:text="Condition: Cracked" />
+                    android:textSize="13sp"
+                    tools:text="Top 3:\n1. Concrete - 82.30%\n2. Brick - 11.25%\n3. Metal - 6.45%" />
 
-                <!-- Severity (Hidden if Intact) -->
+                <TextView
+                    android:id="@+id/resultLocationTag"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#111111"
+                    android:textSize="15sp"
+                    tools:text="Location Tag: Wall A" />
+
+                <TextView
+                    android:id="@+id/resultLedgerStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#111111"
+                    android:textSize="15sp"
+                    tools:text="Status: DEFECT VERIFIED" />
+
                 <TextView
                     android:id="@+id/resultSeverity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:textColor="#B00020"
-                    android:textSize="16sp"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    tools:text="Severity: Moderate" />
+                    tools:text="MODERATE" />
 
-                <!-- Confidence (Moved to bottom of info, smaller) -->
                 <TextView
-                    android:id="@+id/resultConfidence"
+                    android:id="@+id/resultVerifiedDefects"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
-                    tools:text="Confidence: 0.9850" />
+                    android:layout_marginTop="12dp"
+                    android:textColor="#111111"
+                    android:textSize="14sp"
+                    tools:text="No Defects" />
+
+                <TextView
+                    android:id="@+id/resultHScore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="#111111"
+                    android:textSize="14sp"
+                    tools:text="H-Score: 0.8450" />
+
+                <TextView
+                    android:id="@+id/resultEScore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#111111"
+                    android:textSize="14sp"
+                    tools:text="E-Score: 0.4420" />
+
+                <TextView
+                    android:id="@+id/resultTimestamp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#111111"
+                    android:textSize="14sp"
+                    tools:text="Timestamp: May 18, 2026 09:45" />
 
             </LinearLayout>
         </ScrollView>
+
+        <Button
+            android:id="@+id/btnShowDefects"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#607D8B"
+            android:text="@string/show_defects"
+            android:textColor="#FFFFFF" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -126,8 +190,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:backgroundTint="#4CAF50"
-                android:text="@string/keep"
+                android:backgroundTint="#607D8B"
+                android:text="@string/close"
                 android:textColor="#FFFFFF" />
 
         </LinearLayout>

@@ -5,7 +5,6 @@ data class HistoryItem(
     val imageUri: String,
     val material: String,
     val damage: String,
-    val confidence: Float,
     val prompt: String,
     val damageSignal: Float,
     val severityScore: Float,

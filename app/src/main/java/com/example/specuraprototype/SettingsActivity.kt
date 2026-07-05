@@ -2,13 +2,15 @@ package com.example.specuraprototype
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
@@ -45,18 +47,68 @@ class SettingsActivity : AppCompatActivity() {
             // no-op
         }
 
-        // Switches (mock behavior for now)
-        findViewById<SwitchMaterial>(R.id.swShutterSound).setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(this, "Shutter sound: $isChecked", Toast.LENGTH_SHORT).show()
+        // Capture and AI controls
+        val shutterSoundSwitch = findViewById<SwitchMaterial>(R.id.swShutterSound)
+        shutterSoundSwitch.isChecked = AppSettings.isShutterSoundEnabled(this)
+        shutterSoundSwitch.setOnCheckedChangeListener { _, isChecked ->
+            AppSettings.setShutterSoundEnabled(this, isChecked)
         }
 
-        findViewById<SwitchMaterial>(R.id.swShowConfidence).setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(this, "Show confidence: $isChecked", Toast.LENGTH_SHORT).show()
+        val defectThresholdGroup = findViewById<MaterialButtonToggleGroup>(R.id.tgDefectThreshold)
+        defectThresholdGroup.check(
+            when (AppSettings.getDefectThresholdPreset(this)) {
+                AppSettings.PRESET_LOW -> R.id.btnDefectLow
+                AppSettings.PRESET_HIGH -> R.id.btnDefectHigh
+                else -> R.id.btnDefectMedium
+            }
+        )
+        defectThresholdGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            AppSettings.setDefectThresholdPreset(
+                this,
+                when (checkedId) {
+                    R.id.btnDefectLow -> AppSettings.PRESET_LOW
+                    R.id.btnDefectHigh -> AppSettings.PRESET_HIGH
+                    else -> AppSettings.PRESET_MEDIUM
+                }
+            )
         }
 
-        // Buttons (mock actions)
+        val lightingRobustnessGroup = findViewById<MaterialButtonToggleGroup>(R.id.tgLightingRobustness)
+        lightingRobustnessGroup.check(
+            when (AppSettings.getLightingRobustnessPreset(this)) {
+                AppSettings.PRESET_LOW -> R.id.btnLightingLow
+                AppSettings.PRESET_HIGH -> R.id.btnLightingHigh
+                else -> R.id.btnLightingMedium
+            }
+        )
+        lightingRobustnessGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            AppSettings.setLightingRobustnessPreset(
+                this,
+                when (checkedId) {
+                    R.id.btnLightingLow -> AppSettings.PRESET_LOW
+                    R.id.btnLightingHigh -> AppSettings.PRESET_HIGH
+                    else -> AppSettings.PRESET_MEDIUM
+                }
+            )
+        }
+
+        // About popup
         findViewById<Button>(R.id.btnAbout).setOnClickListener {
-            Toast.makeText(this, "About SPECURA (mock)", Toast.LENGTH_SHORT).show()
+            showAboutSpecuraPopup()
         }
+    }
+
+    private fun showAboutSpecuraPopup() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_about_specura, null)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .setPositiveButton(R.string.close) { d, _ -> d.dismiss() }
+            .setCancelable(true)
+            .show()
+
+        dialog.setCanceledOnTouchOutside(true)
     }
 }

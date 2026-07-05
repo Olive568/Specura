@@ -52,6 +52,7 @@ dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.opencv:opencv:4.9.0")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     // Room
     implementation(libs.androidx.room.runtime)

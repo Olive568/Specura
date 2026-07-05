@@ -21,4 +21,7 @@ interface ScanDao {
 
     @Query("SELECT DISTINCT location FROM scans ORDER BY location ASC")
     fun getUniqueLocations(): List<String>
+
+    @Query("DELETE FROM scans WHERE jsonData LIKE '%' || :imageUri || '%'")
+    fun deleteScanByImageUri(imageUri: String)
 }

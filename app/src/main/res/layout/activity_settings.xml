@@ -4,7 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
 
     <ImageButton
         android:id="@+id/btnBack"
@@ -12,10 +13,12 @@
         android:layout_height="48dp"
         android:contentDescription="@string/back"
         android:src="@drawable/ic_arrow_back"
+        android:background="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="16dp"
+        app:tint="#424242"/>
 
     <!-- Main content area -->
     <ScrollView
@@ -37,28 +40,38 @@
             android:padding="16dp">
 
             <!-- Header Box -->
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:background="#E0E0E0"
-                android:layout_marginBottom="16dp">
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                android:layout_marginBottom="24dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/settings_title"
-                    android:textSize="20sp"
-                    android:textStyle="bold"/>
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:background="#FFFFFF">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_subtitle"
-                    android:textSize="14sp"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_title"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#212121"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_subtitle"
+                        android:textSize="14sp"
+                        android:textColor="#757575"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- SECTION: Capture -->
             <TextView
@@ -66,69 +79,205 @@
                 android:layout_height="wrap_content"
                 android:text="@string/settings_capture"
                 android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                android:textSize="12sp"
+                android:textColor="#9E9E9E"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp"/>
 
             <!-- Setting: Shutter sound -->
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:gravity="center_vertical"
-                android:background="#F2F2F2"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#EEEEEE"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/shutter_sound"
-                    android:textSize="16sp"
-                    android:textStyle="bold"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:gravity="center_vertical">
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swShutterSound"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/shutter_sound"
+                        android:textSize="16sp"
+                        android:textColor="#424242"/>
 
-            <!-- SECTION: Results -->
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/swShutterSound"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SECTION: AI Behavior -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/settings_results"
+                android:text="@string/settings_ai_behavior"
                 android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                android:textSize="12sp"
+                android:textColor="#9E9E9E"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp"/>
 
-            <!-- Setting: Show confidence score -->
-            <LinearLayout
+            <!-- Setting: Defect Threshold -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:gravity="center_vertical"
-                android:background="#F2F2F2"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#EEEEEE"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/defect_threshold"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#424242"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/defect_threshold_subtitle"
+                        android:textSize="12sp"
+                        android:textColor="#757575"
+                        android:layout_marginTop="4dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/tgDefectThreshold"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <Button
+                            android:id="@+id/btnDefectLow"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/low"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                        <Button
+                            android:id="@+id/btnDefectMedium"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/medium"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                        <Button
+                            android:id="@+id/btnDefectHigh"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/high"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Setting: Lighting Robustness -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#EEEEEE"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/show_confidence_score"
-                    android:textSize="16sp"
-                    android:textStyle="bold"/>
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swShowConfidence"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lighting_robustness"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#424242"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lighting_robustness_subtitle"
+                        android:textSize="12sp"
+                        android:textColor="#757575"
+                        android:layout_marginTop="4dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/tgLightingRobustness"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <Button
+                            android:id="@+id/btnLightingLow"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/low"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                        <Button
+                            android:id="@+id/btnLightingMedium"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/medium"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                        <Button
+                            android:id="@+id/btnLightingHigh"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/high"
+                            android:textAllCaps="false"
+                            android:textSize="13sp"/>
+
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- SECTION: App -->
             <TextView
@@ -136,20 +285,23 @@
                 android:layout_height="wrap_content"
                 android:text="@string/settings_app"
                 android:textStyle="bold"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp"/>
+                android:textSize="12sp"
+                android:textColor="#9E9E9E"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp"/>
 
             <!-- Setting: About -->
             <Button
                 android:id="@+id/btnAbout"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="56dp"
                 android:text="@string/about_specura"
-                android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/btn_oval"
-                android:backgroundTint="@null"
-                android:layout_marginBottom="12dp"/>
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:layout_marginBottom="24dp"/>
 
             <!-- Footer version text -->
             <TextView
@@ -157,8 +309,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/version_prototype"
                 android:textSize="12sp"
-                android:textColor="#777777"
-                android:layout_marginTop="12dp"
+                android:textColor="#9E9E9E"
+                android:layout_marginBottom="32dp"
                 android:layout_gravity="center_horizontal"/>
 
         </LinearLayout>
@@ -171,9 +323,11 @@
         android:layout_height="80dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginBottom="16dp"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:background="#FFFFFF"
+        android:background="@drawable/bottom_nav_background"
+        android:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -182,35 +336,38 @@
             android:id="@+id/btnNavHistory"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/nav_history"
             android:src="@android:drawable/ic_menu_recent_history"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#424242"/>
 
         <ImageButton
             android:id="@+id/btnNavCamera"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:background="@android:color/transparent"
+            android:background="@drawable/btn_oval"
             android:contentDescription="@string/nav_camera"
             android:src="@android:drawable/ic_menu_camera"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="@color/white"/>
 
         <ImageButton
             android:id="@+id/btnNavSettings"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/nav_settings"
             android:src="@android:drawable/ic_menu_manage"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#2196F3"/> <!-- Active color for Settings -->
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

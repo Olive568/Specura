@@ -47,18 +47,7 @@
         app:layout_constraintTop_toBottomOf="@id/topBar"
         app:layout_constraintBottom_toTopOf="@id/materialSelectorContainer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" >
-
-        <ImageView
-            android:id="@+id/ghostOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:alpha="0.5"
-            android:scaleType="centerCrop"
-            android:visibility="gone"
-            tools:src="@android:drawable/ic_menu_report_image"
-            tools:visibility="visible" />
-    </androidx.camera.view.PreviewView>
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Material Selection Mode -->
     <LinearLayout
@@ -67,7 +56,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="4dp"
         app:layout_constraintBottom_toTopOf="@id/locationContainer">
 
         <TextView
@@ -137,6 +126,16 @@
 
             </com.google.android.material.button.MaterialButtonToggleGroup>
         </HorizontalScrollView>
+
+        <!-- DEBUG ONLY: temporary local file picker for PC testing -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUploadPhoto"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Upload Photo"
+            android:textAllCaps="false" />
     </LinearLayout>
 
     <!-- Location Selection UI (Anchored above capture button) -->
@@ -145,7 +144,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp"
         android:gravity="center_vertical"
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
@@ -155,18 +156,42 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="@string/location_tag_hint">
+            android:hint="@string/location_tag_hint"
+            app:boxBackgroundMode="outline"
+            app:endIconMode="dropdown_menu"
+            app:hintEnabled="true">
 
-            <AutoCompleteTextView
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
                 android:id="@+id/actvLocationTag"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapCharacters"
+                android:background="@null"
+                android:imeOptions="actionDone"
+                android:inputType="textCapWords"
                 android:singleLine="true"
-                android:dropDownHeight="200dp"
-                android:textColor="#000000"/>
+                android:paddingVertical="10dp"
+                android:textColor="#000000"
+                android:textSize="14sp" />
 
         </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCreateLocation"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/create_location"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTorch"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/torch_off"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 
@@ -223,7 +248,5 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- Ghost Overlay (Last element to be drawn on top of everything) -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

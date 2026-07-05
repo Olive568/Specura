@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
-            android:text="@string/export_csv"
+            android:text="@string/generate_report"
             android:textAllCaps="false"
             android:backgroundTint="#2196F3"
             app:icon="@android:drawable/ic_menu_share" />

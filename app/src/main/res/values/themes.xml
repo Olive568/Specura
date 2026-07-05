@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.SpecuraPrototype" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.SpecuraPrototype" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Primary brand color (Grays). -->
         <item name="colorPrimary">@color/gray_700</item>
         <item name="colorPrimaryVariant">@color/gray_900</item>
